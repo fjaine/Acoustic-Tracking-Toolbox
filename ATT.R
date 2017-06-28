@@ -6,7 +6,7 @@
 ### Movement and space use metrics are calculated over full taglife and user defined temporal subsets
 
 
-ATT<-function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=2, grid=200, sub="%Y-%m", cumulative=FALSE, plotfull=FALSE, plotsub=FALSE, storepoly=FALSE, QCval=2){
+ATT <- function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=2, grid=200, sub="%Y-%m", cumulative=FALSE, plotfull=FALSE, plotsub=FALSE, storepoly=FALSE, QCval=2){
   ####################################################################################################################################################
   ### tagdata:    detection data for each indivdual (sourced from IMOS ATF or from VUE)
   ### taginfo:    Metadata information about each tag (e.g. sex, size, transmitter life, etc.)
@@ -34,7 +34,9 @@ ATT<-function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=2,
   
   
   ##### Setup input data based on source (IMOS or VEMCO)
-  if(IMOSdata){data<-merge(subset(tagdata, Detection_QC<=QCval),taginfo, by="transmitter_id")}else{
+  if(IMOSdata) {
+    data<-merge(subset(tagdata, Detection_QC<=QCval),taginfo, by="transmitter_id")
+  } else {
     data<-merge(data.frame(tag_id=tagdata$Transmitter.Serial, transmitter_id=tagdata$Transmitter, 
                            installation_name=NA,
                            station_name=tagdata$Station.Name,
@@ -74,19 +76,23 @@ ATT<-function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=2,
                       num_stat=aggregate(station_name~yearmon, data, function(x) length(unique(x)), na.action=NULL)[,2],
                       num_new_stat=NA)
       ### Number of new stations detected on between timesteps
-      if(nrow(res)>1){res$num_new_stat<-c(NA,sapply(2:nrow(res), function(x) num_new_stat=length(setdiff(unique(data[data$yearmon%in%res$yearmon[x],"station_name"]),unique(data[data$yearmon%in%res$yearmon[x-1],"station_name"])))))}else{res$num_new_stat<-NA}
+      if(nrow(res)>1){
+        res$num_new_stat<-c(NA,sapply(2:nrow(res), function(x) num_new_stat=length(setdiff(unique(data[data$yearmon%in%res$yearmon[x],"station_name"]),unique(data[data$yearmon%in%res$yearmon[x-1],"station_name"])))))
+                                      } else {
+                                        res$num_new_stat<-NA
+                                      }
       
       ### Calculate and add Detection Index (Residency Index: Number of days detected on IMOS array/ number of days in month)
       ### Need information on tag life to refine the index for first and last month of results
       if(!is.na(as.Date(data$ReleaseDate)[1])){
         st<-as.Date(data$ReleaseDate)[1] ## start of tag transmission (presuming release date)
-      }else{
+      } else {
         st<-as.Date(min(data$dt, na.rm=TRUE)) ## use first date of detection as start date if release date not provided
       }
       if(!is.na(taglife)){
         et<-st+taglife ## maximum tag life from metadata to find date when battery life ends
         full$DI<-full$days_det/taglife
-      }else{
+      } else {
         et<-as.Date(max(data$dt, na.rm=TRUE)) ## if not recorded in metadata, last date of detection used as end date
         full$DI<-full$days_det/as.numeric(difftime(et, st,"days")) ## DI when tag life not recorded (using last day detected as end date)
       }
@@ -95,7 +101,7 @@ ATT<-function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=2,
       dal[dal$yearmon%in%format(et, "%Y-%m"),"dal"]<-as.integer(format(et, "%d"))
       dal$DI<-res$days_det/dal$dal
       res<-merge(res, dal[,c("yearmon","DI")], by="yearmon")
-    }else{
+    } else {
       full=data.frame(matrix(ncol=9, nrow=0))
       res=data.frame(matrix(ncol=12, nrow=0))
     }
@@ -119,7 +125,7 @@ ATT<-function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=2,
       disp$azcon<-c(gzAzimuth(from=matrix(c(disp$ReleaseLon[1],disp$ReleaseLat[1]),1,2), to=matrix(c(disp$lon[1],disp$lat[1]),1,2)),
                        sapply(2:nrow(disp), function(x) azcon=gzAzimuth(from=matrix(c(disp$lon[x-1],disp$lat[x-1]),1,2), to=matrix(c(disp$lon[x],disp$lat[x]),1,2))))
       disp$azcon<- ifelse(!is.na(disp$azcon) & disp$azcon<0, disp$azcon+360, disp$azcon)
-    }else{
+    } else {
       message('- Calculating dispersal distances and bearings')
       pts<-data.frame(lat=data$latitude, lon=data$longitude); coordinates(pts)<-~lon+lat; projection(pts)<-ll
       disp<-data.frame(tag_id=data$tag_id[1], transmitter_id=data$transmitter_id[1], species=data$scientific_name, installation_name=data$installation_name, station_name=data$station_name, 
@@ -194,7 +200,7 @@ ATT<-function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=2,
           },error=function(e){message("ERROR in calculating subsetted BBKUD estimates and area:",conditionMessage(e))})
         barea<-data.frame(yearmon=as.character(ym[ym$V1>5,"yearmon"]), bbk50=unlist(data.frame(bb)[1,]), bbk95=unlist(data.frame(bb)[2,]))
         res<-merge(res,barea, by="yearmon", all=TRUE)
-      }else{
+      } else {
         message('WARNING: Not enough unique relocations to estimate subsetted BBKUDs')
         res$bbk50<-NA; res$bbk95<-NA
       }
@@ -259,13 +265,13 @@ ATT<-function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=2,
         }else{
           out<-list(full=full, subset=res, COA=cenac, disp=disp)
           }
-      }else{
+      } else {
         message('WARNING: Less than 5 unique relocations, cannot estimate MCP and BBKUDs')
         full$mcp<-NA; full$bbk50<-NA; full$bbk95<-NA
         res$mcp<-NA; res$bbk50<-NA; res$bbk95<-NA
         out<-list(full=full, subset=res, COA=cenac, disp=disp)
         }
-    }else{
+    } else {
       message('ERROR: Not enough reliable relocation data to calculte movement and activity space metrics\n- Check tag details are included in taginfo file\n- Check Detection QC values of IMOS data')
       out<-list(full=data.frame(matrix(ncol=12, nrow=0)),
                 subset=data.frame(matrix(ncol=14, nrow=0)),
