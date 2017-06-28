@@ -106,9 +106,10 @@ ATT <- function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=
       res=data.frame(matrix(ncol=12, nrow=0))
     }
     
-    ### Dispersal Kernel outputs
+    ### Dispersal metric calculations
     if(!is.na(data$release_latitude[1])){
       message('- Calculating dispersal distances and bearings')
+      ## Calculating dispersal distances and bearing when release location has been provided
       pts<-data.frame(lat=data$latitude, lon=data$longitude); coordinates(pts)<-~lon+lat; projection(pts)<-ll
       pt<-data.frame(lat=data$release_latitude[1], lon=data$release_longitude[1]); coordinates(pt)<-~lon+lat; projection(pt)<-ll
       disp<-data.frame(tag_id=data$tag_id[1], transmitter_id=data$transmitter_id[1], species=data$scientific_name, installation_name=data$installation_name, station_name=data$station_name, 
@@ -127,6 +128,7 @@ ATT <- function(tagdata, taginfo, IMOSdata=FALSE, sig2=200, timestep=60, extent=
       disp$azcon<- ifelse(!is.na(disp$azcon) & disp$azcon<0, disp$azcon+360, disp$azcon)
     } else {
       message('- Calculating dispersal distances and bearings')
+      ## Calculating dispersal distances and bearing when release location is not recorded, disrel and azrel are left NA
       pts<-data.frame(lat=data$latitude, lon=data$longitude); coordinates(pts)<-~lon+lat; projection(pts)<-ll
       disp<-data.frame(tag_id=data$tag_id[1], transmitter_id=data$transmitter_id[1], species=data$scientific_name, installation_name=data$installation_name, station_name=data$station_name, 
                           ReleaseDate=NA, ReleaseLat=NA, ReleaseLon=NA,
